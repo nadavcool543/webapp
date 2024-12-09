@@ -1,6 +1,6 @@
 service:
   type: ClusterIP
-  port: !!int 80
+  port: 80
 
 redis:
   enabled: true
@@ -9,12 +9,20 @@ redis:
     password: "redis-password"
   architecture: standalone
 
-#hooks
+# Hooks configuration
+hooks:
+  dbInit:
+    enabled: false
+    image: your-db-init-image:tag
+    command: []
+    args: []
+
 backup:
-    enabled: true  
-connectionTest: 
-    enabled: true 
-  
+  enabled: true
+
+connectionTest:
+  enabled: true
+
 config:
   redis:
     host: "webapp-redis-master"
@@ -26,51 +34,23 @@ config:
     - metrics
     - logging
     - tracing
-  
+
 app: Release.Name
-  
+
 global:
   configMapName: "webapp-newconfig"
-  storageClass: "standard"  
+  storageClass: "standard"
   redis:
-    password: "redis-password"  
+    password: "redis-password"
 
 persistence:
   enabled: true
 
 backupPVC:
-  size: 1Gi   
-  storageClassName: standard  
+  size: 1Gi
+  storageClassName: standard
 
-#Test 
 tests:
-  enabled: false  
+  enabled: false
   persistence:
-    enabled: true 
-
-#helm test and the Release Name
-
-# Default values for webapp
-
-# Hooks configuration
-hooks:
-  dbInit:
-    enabled: false  # Set to true if you want to run database initialization
-    image: your-db-init-image:tag
-    command: []
-    args: []
-
-# Redis configuration
-redis:
-  enabled: true
-  auth:
     enabled: true
-    password: ""
-
-# Application configuration
-nameOverride: ""
-fullnameOverride: ""
-
-# Global configuration
-global:
-  configMapName: webapp-config
