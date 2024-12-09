@@ -8,6 +8,10 @@ redis:
     enabled: true
     password: "redis-password"
   architecture: standalone
+  hooks:
+    master:
+      init:
+        enabled: true
 
 # Hooks configuration
 hooks:
