@@ -1,0 +1,25 @@
+{{- if and .Values.redis.enabled .Values.connectionTest.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-redis-connection-test"
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "-10"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    spec:
+      containers:
+      - name: redis-connection-test
+        image: alpine:latest  
+        command:
+          - "sh"
+          - "-c"
+          - |
+            apk update && apk add redis
+            sleep 60
+            redis-cli -h {{ .Values.config.redis.host }} -p {{ .Values.config.redis.port }} -a {{ .Values.redis.auth.password }} PING
+      restartPolicy: Never
+  backoffLimit: 2
+{{- end }}

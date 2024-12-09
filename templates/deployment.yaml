@@ -1,0 +1,71 @@
+{{- if .Values.redis.enabled }}
+{{- template "validate.redis" . }}
+{{- template "validate.storage" . }}
+{{- template "validate.service" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp
+  annotations:
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {{- include "appDef" . | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "appDef" . | nindent 8 }}
+    spec:
+      volumes:
+        - name: script-volume
+          configMap:
+            name: webapp-script
+      containers:
+        - name: webapp
+          image: python:3.9-slim
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              pip install redis &&
+              python /app/app.py
+          env:
+            {{- range $key, $value := .Values.config.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+            {{- include "listToEnv" .Values.config.features | nindent 12 }}
+            {{- with .Values.config.redis }}
+            - name: REDIS_HOST
+              value: {{ .host | quote }}
+            - name: REDIS_PORT
+              value: {{ .port | quote }}
+            {{- if $.Values.redis.auth.enabled }}
+            - name: REDIS_PASSWORD
+              value: {{ $.Values.redis.auth.password | quote }}
+            {{- end }}
+            {{- end }}
+            
+          {{- if (include "getSecret" . | trim | eq "hasSecret: true") }}
+          - name: MY_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: mysecret
+                key: secretKeyName
+          {{- end }}
+
+          {{- if (include "isNewVersion" . | trim | eq "true") }}
+          - name: NEW_FEATURE_ENABLED
+            value: "true"
+          - name: CONFIG_VERSION
+            value: "new"
+          {{- end }}
+
+          envFrom:
+            - configMapRef:
+                name: {{ $.Values.global.configMapName }}
+
+          volumeMounts:
+            - name: script-volume
+              mountPath: /app
+{{- end }}

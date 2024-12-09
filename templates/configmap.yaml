@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webapp-script
+data:
+  app.py: |
+    import os
+    import time
+    import redis
+    from redis.exceptions import ConnectionError
+    import sys
+
+    def get_redis_client():
+        if not os.getenv('REDIS_HOST'):
+            print("Redis is disabled, running without Redis")
+            return None
+            
+        try:
+            client = redis.Redis(
+                host=os.getenv('REDIS_HOST'),
+                port=int(os.getenv('REDIS_PORT', 6379)),
+                password=os.getenv('REDIS_PASSWORD'),
+                socket_timeout=5,
+            )
+            client.ping()
+            print("Successfully connected to Redis")
+            return client
+        except ConnectionError:
+            print("Failed to connect to Redis")
+            return None
+
+    def main():
+        redis_client = get_redis_client()
+        counter = 0
+        
+        while True:
+            if redis_client:
+                redis_client.incr('counter')
+                counter = int(redis_client.get('counter'))
+                print(f"Counter (Redis): {counter}")
+            else:
+                counter += 1
+                print(f"Counter (Local): {counter}")
+            
+            time.sleep(5)
+
+    if __name__ == "__main__":
+        main()

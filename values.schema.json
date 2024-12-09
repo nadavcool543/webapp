@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["service", "redis", "config", "global"],
+  "properties": {
+    "service": {
+      "type": "object",
+      "required": ["type", "port"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["ClusterIP", "NodePort", "LoadBalancer"]
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535
+        }
+      }
+    },
+    "redis": {
+      "type": "object",
+      "required": ["enabled", "auth"],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "auth": {
+          "type": "object",
+          "required": ["enabled", "password"],
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "password": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "config": {
+      "type": "object",
+      "required": ["redis", "env"],
+      "properties": {
+        "redis": {
+          "type": "object",
+          "required": ["host", "port"],
+          "properties": {
+            "host": {
+              "type": "string"
+            },
+            "port": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 65535
+            }
+          }
+        },
+        "env": {
+          "type": "object",
+          "properties": {
+            "APP_ENV": {
+              "type": "string",
+              "enum": ["development", "production", "staging"]
+            },
+            "DEBUG": {
+              "type": "string",
+              "enum": ["true", "false"]
+            }
+          }
+        }
+      }
+    },
+    "global": {
+      "type": "object",
+      "required": ["configMapName", "storageClass"],
+      "properties": {
+        "configMapName": {
+          "type": "string"
+        },
+        "storageClass": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{{- if and .Values.redis.enabled .Values.backup.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-redis-backup"
+  annotations:
+    "helm.sh/hook": pre-upgrade
+    "helm.sh/hook-weight": "-10"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    spec:
+      containers:
+      - name: redis-backup
+        image: redis:latest
+        command: ['sh', '-c', 'redis-cli -h {{ .Values.config.redis.host }} -p {{ .Values.config.redis.port }} -a {{ .Values.redis.auth.password }} --rdb /backup/dump-$(date +%Y%m%d-%H%M%S).rdb']
+        volumeMounts:
+        - name: redis-backup
+          mountPath: /backup
+      volumes:
+      - name: redis-backup
+        persistentVolumeClaim:
+          claimName: redis-backup-pvc
+      restartPolicy: Never
+  backoffLimit: 2
+{{- end }}

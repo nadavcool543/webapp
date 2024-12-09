@@ -1,0 +1,13 @@
+{{- if .Values.backup.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-backup-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.backupPVC.size | default "1Gi" }}
+  storageClassName: {{ .Values.backupPVC.storageClassName | default "standard" }}
+{{- end }}

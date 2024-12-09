@@ -1,0 +1,19 @@
+{{- if .Values.tests.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ .Release.Name }}-connection-test"
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: connection-test
+      image: busybox
+      command: 
+        - wget
+        - --spider
+        - -T
+        - "10"
+        - http://{{ .Release.Name }}-service:{{ .Values.service.port }}
+  restartPolicy: Never
+{{- end }}

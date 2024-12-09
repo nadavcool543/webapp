@@ -1,0 +1,35 @@
+{{- if .Values.tests.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ .Release.Name }}-validation-tests"
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  containers:
+    - name: tests
+      image: bitnami/kubectl
+      command:
+        - sh
+        - -c
+        - |
+          # Resource validation
+          echo "Validating resources..."
+          kubectl get deployment {{ .Release.Name }}-deployment || exit 1
+          kubectl get service {{ .Release.Name }}-service || exit 1
+          {{- if .Values.tests.persistence.enabled }}
+          kubectl get pvc {{ .Release.Name }}-pvc || exit 1
+          {{- end }}
+
+          # Configuration verification  
+          echo "Verifying configuration..."
+          kubectl get configmap {{ .Values.global.configMapName }} || exit 1
+          
+          # Connection testing
+          echo "Testing service connection..."
+          wget -q --spider --timeout=10 http://{{ .Release.Name }}-service:{{ .Values.service.port }} || exit 1
+          
+          echo "All tests passed!"
+  restartPolicy: Never
+{{- end }}

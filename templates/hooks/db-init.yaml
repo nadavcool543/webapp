@@ -1,0 +1,35 @@
+{{- if .Values.hooks.dbInit.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-db-init"
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  template:
+    spec:
+      containers:
+      - name: db-init
+        image: {{ .Values.hooks.dbInit.image | default "postgres:13" }}
+        command: ['sh', '-c', 'psql -h $DB_HOST -U $DB_USER -d $DB_NAME -f /scripts/init.sql']
+        env:
+        - name: DB_HOST
+          value: {{ .Values.hooks.dbInit.host | quote }}
+        - name: DB_USER
+          value: {{ .Values.hooks.dbInit.user | quote }}
+        - name: DB_NAME
+          value: {{ .Values.hooks.dbInit.database | quote }}
+        - name: PGPASSWORD
+          value: {{ .Values.hooks.dbInit.password | quote }}
+        volumeMounts:
+        - name: init-script
+          mountPath: /scripts
+      volumes:
+      - name: init-script
+        configMap:
+          name: {{ .Release.Name }}-db-init-script
+      restartPolicy: Never
+  backoffLimit: 1
+{{- end }}

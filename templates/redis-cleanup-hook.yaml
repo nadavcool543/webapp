@@ -1,0 +1,19 @@
+{{- if and .Values.redis.enabled .Values.redis.hooks.master.cleanup.enabled }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-redis-cleanup"
+  annotations:
+    "helm.sh/hook": post-delete
+    "helm.sh/hook-weight": "10"
+    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
+spec:
+  template:
+    spec:
+      containers:
+      - name: redis-cleanup
+        image: redis:latest
+        command: ['sh', '-c', 'redis-cli -h {{ .Values.config.redis.host }} -p {{ .Values.config.redis.port }} -a {{ .Values.redis.auth.password }} FLUSHALL']
+      restartPolicy: Never
+  backoffLimit: 1
+{{- end }}

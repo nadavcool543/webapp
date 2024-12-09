@@ -1,0 +1,26 @@
+{{- template "validate.redis" . }}
+{{- template "validate.storage" . }}
+{{- template "validate.service" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "appDef" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "appDef" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          {{- if .Values.redis.enabled }}
+          {{- include "redisConfig" . | nindent 10 }}
+          {{- end }}
+          {{- include "configMapEnv" . | nindent 10 }}
